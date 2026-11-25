@@ -2,213 +2,487 @@
 #define HEIST_H
 
 #include <iostream>
-#include <fstream>
 #include <string>
+#include <exception>
+
 using namespace std;
 
-// DynamicArray utilizes dynamic memory to store objects without STL containers.
-template <class T>
-class DynamicArray {
-    T* data;
-    int count;
-    int capacity;
-    void grow() {
-        int newCapacity = capacity * 2;
-        T* temp = new T[newCapacity];
-        for (int i = 0; i < count; ++i) temp[i] = data[i];
-        delete[] data;
-        data = temp;
-        capacity = newCapacity;
-    }
+// ============================================================================
+// ENUMS
+// ============================================================================
+enum class WordRow { Word1, Word2 };
+enum class GameState { Menu, Playing, Won, Lost, Exit };
+enum class MenuChoice { NewGame = 1, LeaderBoard, About, Rules, Exit };
+
+// ============================================================================
+// CUSTOM EXCEPTIONS
+// ============================================================================
+class GameException : public exception {
+protected:
+    string msg;
 public:
-    DynamicArray(int cap = 4) : data(new T[cap]), count(0), capacity(cap) {}
-    DynamicArray(const DynamicArray& other) : data(new T[other.capacity]), count(other.count), capacity(other.capacity) {
-        for (int i = 0; i < count; ++i) data[i] = other.data[i];
+    GameException(const string& m) : msg(m) {}
+    virtual const char* what() const throw() { return msg.c_str(); }
+    virtual ~GameException() throw() {}
+};
+
+class FileException : public GameException {
+public:
+    FileException(const string& m) : GameException(m) {}
+};
+
+class InvalidInputException : public GameException {
+public:
+    InvalidInputException(const string& m) : GameException(m) {}
+};
+
+class InputClosedException : public GameException {
+public:
+    InputClosedException() : GameException("Input stream closed.") {}
+};
+
+class RackFullException : public GameException {
+public:
+    RackFullException(const string& m) : GameException(m) {}
+};
+
+class RackEmptyException : public GameException {
+public:
+    RackEmptyException(const string& m) : GameException(m) {}
+};
+
+class WrongLetterException : public GameException {
+public:
+    WrongLetterException(const string& m) : GameException(m) {}
+};
+
+class InvalidWordException : public GameException {
+public:
+    InvalidWordException(const string& m) : GameException(m) {}
+};
+
+class InvalidPositionException : public GameException {
+public:
+    InvalidPositionException(const string& m) : GameException(m) {}
+};
+
+class SlotFilledException : public GameException {
+public:
+    SlotFilledException(const string& m) : GameException(m) {}
+};
+
+class RuleViolationException : public GameException {
+public:
+    RuleViolationException(const string& m) : GameException(m) {}
+};
+
+class WrongAccusationException : public GameException {
+public:
+    WrongAccusationException(const string& m) : GameException(m) {}
+};
+
+// ============================================================================
+// TEMPLATE DYNAMIC ARRAY
+// ============================================================================
+template <typename T>
+class DynamicArray {
+private:
+    T* data;
+    int capacity;
+    int count;
+
+    void resize(int newCap) {
+        T* newData = new T[newCap];
+        for (int i = 0; i < count; i++) {
+            newData[i] = data[i];
+        }
+        delete[] data;
+        data = newData;
+        capacity = newCap;
     }
+
+public:
+    DynamicArray(int initialCap = 10) : capacity(initialCap), count(0) {
+        if (capacity <= 0) capacity = 10;
+        data = new T[capacity];
+    }
+
+    DynamicArray(const DynamicArray& other) : capacity(other.capacity), count(other.count) {
+        data = new T[capacity];
+        for (int i = 0; i < count; i++) data[i] = other.data[i];
+    }
+
     DynamicArray& operator=(const DynamicArray& other) {
         if (this != &other) {
             delete[] data;
-            capacity = other.capacity; count = other.count;
+            capacity = other.capacity;
+            count = other.count;
             data = new T[capacity];
-            for (int i = 0; i < count; ++i) data[i] = other.data[i];
+            for (int i = 0; i < count; i++) data[i] = other.data[i];
         }
         return *this;
     }
+
     ~DynamicArray() { delete[] data; }
-    void push(const T& value) { if (count == capacity) grow(); data[count++] = value; }
-    int size() const { return count; }
-    bool empty() const { return count == 0; }
-    T& operator[](int i) { return data[i]; }
-    const T& operator[](int i) const { return data[i]; }
+
+    void push(const T& val) {
+        if (count >= capacity) resize(capacity * 2);
+        data[count++] = val;
+    }
+
+    void removeAt(int index) {
+        if (index < 0 || index >= count) return;
+        for (int i = index; i < count - 1; i++) {
+            data[i] = data[i + 1];
+        }
+        count--;
+    }
+
     void clear() { count = 0; }
+    int size() const { return count; }
+
+    T& operator[](int index) { return data[index]; }
+    const T& operator[](int index) const { return data[index]; }
 };
 
-enum WordRow { Word1, Word2 };
-enum GameState { Menu, Playing, Won, Lost, Exit };
-enum MenuChoice { NewGame = 1, LeaderBoard, About, Rules, Quit };
-
-class GameException {
-    string message;
-public:
-    GameException(const string& m) : message(m) {}
-    string what() const { return "HEIST ERROR: " + message; }
-};
-
+// ============================================================================
+// GAME STRUCTS & UTILITIES
+// ============================================================================
 struct Tile {
     char tileLetter;
     bool filled;
-    Tile(char c = '_', bool f = false) : tileLetter(c), filled(f) {}
+    Tile(char l = ' ', bool f = false) : tileLetter(l), filled(f) {}
 };
+
 struct Clue {
     char clueLetter;
     int cluePosition;
     WordRow clueRow;
-    Clue(char c = '?', int p = 0, WordRow r = Word1) : clueLetter(c), cluePosition(p), clueRow(r) {}
+    Clue(char l = ' ', int p = 0, WordRow r = WordRow::Word1)
+        : clueLetter(l), cluePosition(p), clueRow(r) {}
 };
+
 struct Location {
     string locName;
     char letterClueLoc;
     int boardPosLoc;
     WordRow locRow;
     bool locSearchFlag;
-    Location(string n = "", char c = '?', int p = 0, WordRow r = Word1)
-        : locName(n), letterClueLoc(c), boardPosLoc(p), locRow(r), locSearchFlag(false) {
-    }
+    Location() : locName(""), letterClueLoc(' '), boardPosLoc(0), locRow(WordRow::Word1), locSearchFlag(false) {}
 };
 
-ostream& operator<<(ostream& out, const Tile& t);
-istream& operator>>(istream& in, Tile& t);
-ostream& operator<<(ostream& out, const Location& l);
-istream& operator>>(istream& in, Location& l);
+bool operator==(const Tile& a, const Tile& b);
+bool operator==(const Clue& a, const Clue& b);
+ostream& operator<<(ostream& os, const Tile& t);
+istream& operator>>(istream& is, Tile& t);
+ostream& operator<<(ostream& os, const Location& loc);
+istream& operator>>(istream& is, Location& loc);
 
+string trimText(const string& s);
+string toUpperText(const string& s);
+string intToText(int value);
+bool parseInt(const string& text, int& result);
+int splitLine(const string& line, char delim, string parts[], int maxParts);
+string rowLabel(WordRow row);
+
+// ============================================================================
+// TileRack & Scrabble & Cottage
+// ============================================================================
 class TileRack {
-    DynamicArray<char> letters;
+private:
+    DynamicArray<Tile> tiles;
+    DynamicArray<int> positions;
+    int maxTiles;
+
 public:
-    void add(char c);
-    bool contains(char c) const;
-    int size() const;
-    char operator[](int i) const;
-    friend TileRack operator+(const TileRack& a, const TileRack& b);
+    TileRack(int limit = 10);
+    TileRack(const TileRack& other);
+    TileRack& operator=(const TileRack& other);
+    ~TileRack();
+
+    void addTile(char letter, int position);
+    void removeTile(char letter);
+    int getCount() const;
+    bool isFull() const;
+    bool isEmpty() const;
+    void clear();
+    void display() const;
+
+    TileRack operator+(const TileRack& other) const;
 };
-TileRack operator+(const TileRack& a, const TileRack& b);
 
 class Scrabble {
-    string words[2];
-    bool solved[2];
-    DynamicArray<char> collected[2];
+private:
+    DynamicArray<Tile> row1;
+    DynamicArray<Tile> row2;
+    string word1;
+    string word2;
+    bool solved1;
+    bool solved2;
+
+    DynamicArray<Tile>& rowOf(WordRow r);
+    const DynamicArray<Tile>& rowOf(WordRow r) const;
+    const string& targetOf(WordRow r) const;
+
 public:
+    static const int WORD1_LEN = 7;
+    static const int WORD2_LEN = 8;
+
     Scrabble();
-    void setWords(const string& a, const string& b);
-    void addClue(WordRow row, char c);
-    void display() const;
-    bool formWord(WordRow row);
-    bool allSolved() const;
-    string getWord(WordRow row) const;
+    Scrabble(const Scrabble& other);
+    Scrabble& operator=(const Scrabble& other);
+    ~Scrabble();
+
+    void loadWords(const string& w1, const string& w2);
+    void placeLetter(const Clue& clue);
+    bool isRowComplete(WordRow r) const;
+    bool isRowSolved(WordRow r) const;
+    bool bothSolved() const;
+    bool checkWord(WordRow r, const string& typed) const;
+    void markSolved(WordRow r);
+    string getTarget(WordRow r) const;
+    void displayRow(ostream& os, WordRow r) const;
+
+    friend ostream& operator<<(ostream& os, const Scrabble& s);
 };
 
+class Cottage {
+private:
+    DynamicArray<Location> locCache;
+
+public:
+    static const int LOCATION_COUNT = 7;
+
+    Cottage();
+    Cottage(const Cottage& other);
+    Cottage& operator=(const Cottage& other);
+    ~Cottage();
+
+    void addLocation(const string& name, char letter, int position);
+    int getLocationCount() const;
+    bool isSearched(int index) const;
+    Clue searchLocation(int index);
+    Clue peekClue(int index) const;
+    string getLocationName(int index) const;
+    void displayLocations() const;
+    void reset();
+};
+
+// ============================================================================
+// CHARACTER HIERARCHY
+// ============================================================================
 class Character {
 protected:
-    string characterName, characterRole, nationality;
-    bool isCulprit, interviewed;
+    string characterName;
+    string characterRole;
+    string nationality;
+    bool isCulprit;
+    bool interviewed;
+
 public:
-    Character();
-    Character(const string& n, const string& r, const string& nation);
-    virtual ~Character() {}
-    virtual void display() const = 0;
+    Character(const string& name, const string& role, const string& nation);
+    virtual ~Character();
+
+    virtual void display(ostream& os) const = 0;
+    virtual Clue giveClue() const;
+    virtual int minCredibility() const;
+    virtual bool isSuspect() const;
+
     string getName() const;
     string getRole() const;
-    bool culprit() const;
-    void setCulprit(bool v);
-    bool wasInterviewed() const;
-    void setInterviewed(bool v);
-    friend ostream& operator<<(ostream& out, const Character& c);
+    string getNationality() const;
+    bool getIsCulprit() const;
+    bool isInterviewed() const;
+
+    friend class GameEngine;
+    friend ostream& operator<<(ostream& os, const Character& c);
+};
+
+class Victim : public Character {
+private:
+    WordRow clueRowChar;
+    char letterClueChar;
+    int boardPosChar;
+
+public:
+    Victim(const string& name, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+    virtual Clue giveClue() const;
+    virtual int minCredibility() const;
+};
+
+class Detective : public Character {
+private:
+    int credibility;
+    int turns;
+    TileRack rack1;
+    TileRack rack2;
+
+public:
+    Detective(const string& name = "Detective", int startCredibility = 100);
+    virtual void display(ostream& os) const;
+    void loseCredibility(int amount);
+    void useTurn();
+    int getCredibility() const;
+    int getTurns() const;
+    TileRack& getRack1();
+    TileRack& getRack2();
 };
 
 class Suspect : virtual public Character {
 protected:
-    char wordLetter;
-    int wordPosition;
+    WordRow clueRowChar;
+    char letterClueChar;
+    int boardPosChar;
+
 public:
-    Suspect(const string& n = "", const string& r = "", const string& nation = "", char l = '?', int p = 0);
-    void display() const override;
-    char getLetter() const;
-    int getPosition() const;
+    Suspect(const string& name, const string& role, const string& nation, char letter, int position);
+    virtual Clue giveClue() const;
+    virtual bool isSuspect() const;
 };
+
 class BusinessRelations : virtual public Suspect {
 public:
-    BusinessRelations(const string& n = "", const string& r = "", const string& nation = "", char l = '?', int p = 0);
+    BusinessRelations(const string& name, const string& role, const string& nation, char letter, int position);
 };
-class CloseRelations : virtual public Suspect {
-public:
-    CloseRelations(const string& n = "", const string& r = "", const string& nation = "", char l = '?', int p = 0);
-};
+
 class HouseHelp : public Suspect {
 public:
-    HouseHelp(const string& n = "", const string& r = "", const string& nation = "", char l = '?', int p = 0);
+    HouseHelp(const string& name, const string& role, const string& nation, char letter, int position);
 };
+
+class CloseRelations : virtual public Suspect {
+public:
+    CloseRelations(const string& name, const string& role, const string& nation, char letter, int position);
+};
+
 class Partner : public BusinessRelations {
 public:
-    Partner(const string& n, const string& nation, char l, int p);
+    Partner(const string& name, const string& role, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+    virtual int minCredibility() const;
 };
+
 class PA : public BusinessRelations, public CloseRelations {
 public:
-    PA(const string& n, const string& nation, char l, int p);
+    PA(const string& name, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+    virtual int minCredibility() const;
 };
+
+class Cook : public HouseHelp {
+public:
+    Cook(const string& name, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+};
+
+class Guard : public HouseHelp {
+public:
+    Guard(const string& name, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+};
+
+class Servant : public HouseHelp {
+public:
+    Servant(const string& name, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+};
+
 class Child : public CloseRelations {
 public:
-    Child(const string& n, const string& nation, char l, int p);
-};
-class Victim : public Character {
-public:
-    Victim();
-    void display() const override;
-};
-class Detective : public Character {
-    int credibility, turns;
-public:
-    Detective(const string& n = "Detective", int c = 100);
-    void display() const override;
-    int getCredibility() const;
-    int getTurns() const;
-    void addTurn();
-    void penalize(int amount);
+    Child(const string& name, const string& nation, char letter, int position);
+    virtual void display(ostream& os) const;
+    virtual int minCredibility() const;
 };
 
-class Cottage {
-    DynamicArray<Location> locations;
-public:
-    void addLocation(const Location& l);
-    int size() const;
-    Location& at(int i);
-    void display() const;
-};
-
+// ============================================================================
+// SCOREBOARD & GAMEENGINE
+// ============================================================================
 class ScoreBoard {
+private:
+    string filePath;
+    static string todayDate();
+
 public:
-    void show() const;
-    void add(const string& detective, const string& result, int credibility, int turns, const string& culprit);
+    ScoreBoard(const string& path = "leader/scores.txt");
+    void addScore(const string& detectiveName, bool won, int credibility, int turnsLeft, const string& culprit);
+    void displayAll() const;
 };
 
 class GameEngine {
+private:
+    static const int MAX_PEOPLE = 8;
+
     static GameEngine* instance;
-    GameState state;
-    Detective* detective;
+
+    Detective detective;
     Cottage cottage;
     Scrabble scrabble;
-    ScoreBoard scoreBoard;
-    string culpritName, culpritRole;
+    TileRack mergedRack;
+
+    Character* people[MAX_PEOPLE];
+    int peopleCount;
+
+    ScoreBoard* scoreBoard;
+
+    GameState state;
+    bool titleShown;
+
     int maxTurns;
+    int startCredibility;
+    int wrongTurnPenalty;
+    int wrongWordPenalty;
+    string winCondition;
+    string loseCondition;
+    string culpritRole;
+
     GameEngine();
-    void loadData();
-    void newGame();
-    void play();
-    void accuse();
-    void pause();
+    ~GameEngine();
+    GameEngine(const GameEngine&);
+    GameEngine& operator=(const GameEngine&);
+
+    void clearPeople();
+    string readLine();
+    int readInt(const string& prompt, int low, int high);
+    bool readYesNo(const string& prompt);
+    void pauseScreen();
+    void clearScreen();
+    void printBox(const string& line1, const string& line2 = "");
+
+    void showTitle();
+    void showMainMenu();
+    void handleMainChoice(MenuChoice choice);
+    void showScoreBoard();
+    void showAbout();
+    void loadRules();
+    void showRules();
+
+    string askDetectiveName();
+    void startNewGame();
+    void loadGameData();
+    void loadLocations(int columnIndex, const string& word1);
+    void loadCharacters(int columnIndex, const string& word2);
+    Character* createCharacter(const string& name, const string& role, const string& nation, char letter, int pos);
+    Character* findCulprit();
+
+    void showStatus();
+    void playTurn();
+    void collectClue(const Clue& clue);
+    void visitLocation();
+    void interviewPerson();
+    void viewBoard();
+    void formWord();
+    void accuseSuspect();
+    void quitGame();
+    void checkEndConditions();
+    void finishGame(bool won, const string& reason);
+
 public:
     static GameEngine* getInstance();
     static void destroyInstance();
-    ~GameEngine();
+
+    void attachScoreBoard(ScoreBoard* board);
     void run();
 };
 
-#endif
+#endif // HEIST_H

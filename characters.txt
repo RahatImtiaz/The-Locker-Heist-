@@ -1,9 +1,9 @@
-Name|Role|Nationality|W2Pos|Cook|Guard|Servant|Partner_1|Partner_2|PA|Child|isCulprit
-Mr_Alex|Victim|French|1|A|A|A|A|A|A|A|0
-Mr_James|Partner|British|2|D|D|D|D|D|D|D|0
-Ms_Sara|Partner|American|3|I|I|I|I|I|I|I|0
-Mr_Ryan|PA|British|4|A|A|A|A|A|A|A|0
-Mr_Oliver|Cook|French|5|M|M|M|M|M|M|M|0
-Mr_Henry|Guard|German|6|O|O|O|O|O|O|O|0
-Mr_Toby|Servant|British|7|N|N|N|N|N|N|N|0
-Miss_Emma|Child|French|8|S|S|S|S|S|S|S|0
+Name|Role|Nationality|W2Pos|Cook|Guard|Servant|P1|P2|PA|Child|isCulprit
+Mr.Leonardo|Victim|French|1|S|S|H|S|R|P|B|0
+Mr.Enzo|Cook|Italian|2|P|H|E|U|A|Y|U|0
+Mr.Lukas|Guard|German|3|A|E|R|N|S|R|R|0
+Mr.Toby|Servant|British|4|G|P|I|B|P|A|G|0
+Ms.Celine|Child|French|5|H|H|T|L|U|M|L|0
+Ms.Ruslana|Partner 1|Ukrainian|6|E|E|A|O|T|I|A|0
+Mr.Dmitry|Partner 2|Russian|7|T|R|G|O|I|D|R|0
+Mr.Jad|PA|Egyptian|8|I|D|E|M|N|S|Y|0
