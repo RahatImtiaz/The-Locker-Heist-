@@ -1,0 +1,1 @@
+Detective|Result|Credibility|Turns_Left|Culprit|Date

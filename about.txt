@@ -1,0 +1,11 @@
+==============================================================
+               THE LOCKER HEIST - ABOUT
+==============================================================
+The Locker Heist is an interactive OOP-based C++ detective game.
+
+A wealthy owner's locker was breached during a high-profile party. 
+Your objective as the Lead Detective is to investigate locations 
+and interview suspects to reveal the hidden Scrabble clue words.
+
+Good luck, Detective!
+==============================================================

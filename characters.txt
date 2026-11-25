@@ -1,0 +1,9 @@
+Name|Role|Nationality|W2Pos|Cook|Guard|Servant|Partner_1|Partner_2|PA|Child|isCulprit
+Mr_Alex|Victim|French|1|A|A|A|A|A|A|A|0
+Mr_James|Partner|British|2|D|D|D|D|D|D|D|0
+Ms_Sara|Partner|American|3|I|I|I|I|I|I|I|0
+Mr_Ryan|PA|British|4|A|A|A|A|A|A|A|0
+Mr_Oliver|Cook|French|5|M|M|M|M|M|M|M|0
+Mr_Henry|Guard|German|6|O|O|O|O|O|O|O|0
+Mr_Toby|Servant|British|7|N|N|N|N|N|N|N|0
+Miss_Emma|Child|French|8|S|S|S|S|S|S|S|0
