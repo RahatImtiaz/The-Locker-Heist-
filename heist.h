@@ -404,7 +404,7 @@ private:
     static string todayDate();
 
 public:
-    ScoreBoard(const string& path = "leader/scores.txt");
+    ScoreBoard(const string& path = "leader/scoreBoard.txt");
     void addScore(const string& detectiveName, bool won, int credibility, int turnsLeft, const string& culprit);
     void displayAll() const;
 };

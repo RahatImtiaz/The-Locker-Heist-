@@ -10,7 +10,7 @@ int main() {
     // Seed random number generator for culprit selection
     srand(static_cast<unsigned int>(time(0)));
 
-    ScoreBoard board("leader/scores.txt");
+    ScoreBoard board("leader/scoreBoard.txt");
     GameEngine* engine = GameEngine::getInstance();
     engine->attachScoreBoard(&board);
 

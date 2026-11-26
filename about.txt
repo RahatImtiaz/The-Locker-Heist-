@@ -4,13 +4,13 @@
 ==========================================================
 
 Developed By:
-  [Student 1 Name]  |  [25F-XXXX]
-  [Student 2 Name]  |  [25F-XXXX]
+ Rahat Imtiaz  |  25F-3009
+  Fatima Altaf  |  25F-3005
 
 Course:  CL1004 - Object Oriented Programming
-Section: CS/SE - 3 - A/D
+Section: SE - 3 - A
 Semester: Fall 2026
-Lab Instructor: [Instructor Name]
+Lab Instructor: Mozeb Ahmad Khan
 
 -------------- ABOUT THE GAME --------------
 
