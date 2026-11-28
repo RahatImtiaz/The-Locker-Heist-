@@ -36,6 +36,14 @@ Always run from this folder so the `.txt` files are found.
 * Quit returns to main menu and does not write to the score board.
 * Exceptions are caught in `main()`; the engine keeps its state so `run()` simply resumes after an error.
 * Only `<iostream> <fstream> <string> <cstdlib> <ctime> <cctype>` are used - no STL containers/algorithms.
+  
+ 
+  <img width="641" height="413" alt="Screenshot 2026-11-28 at 11 20 27 PM" src="https://github.com/user-attachments/assets/bffd789b-4116-43d6-b010-c35748f2b42b" />
+
+  <img width="641" height="421" alt="Screenshot 2026-11-28 at 11 19 35 PM" src="https://github.com/user-attachments/assets/0f76f6a7-0d20-4d5b-a57f-a3e8444723cc" />
+
+
+
 
 ## Known limitations
 Console only; single player; one fixed cottage layout; score file needs the `leader` folder to exist.
